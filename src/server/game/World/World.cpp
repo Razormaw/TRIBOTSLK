@@ -29,6 +29,7 @@
 #include "BattlefieldMgr.h"
 #include "BattlegroundMgr.h"
 #include "CalendarMgr.h"
+#include "Channel.h"
 #include "ChannelMgr.h"
 #include "CharacterCache.h"
 #include "CharacterDatabaseCleaner.h"
@@ -2271,6 +2272,73 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.worldserver", "World initialized in {} minutes {} seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000));
 
     TC_METRIC_EVENT("events", "World initialized", "World initialized in " + std::to_string(startupDuration / 60000) + " minutes " + std::to_string((startupDuration % 60000) / 1000) + " seconds");
+	
+    // =====================================================================
+    // Registrar scripts del LLM de NPCBots manualmente.
+    // Esto se hace porque el scriptloader autogenerado por CMake no
+    // siempre detecta scripts nuevos en subcarpetas. Registramos aquí
+    // de forma explicita para garantizar que OnChat() del PlayerScript
+    // se dispare cuando un jugador escribe en un canal.
+    // =====================================================================
+    {
+        extern void AddSC_npcbot_llm_chat();   // declaracion forward
+        AddSC_npcbot_llm_chat();
+        TC_LOG_INFO("server.loading", "LLM: AddSC_npcbot_llm_chat() invocado manualmente.");
+    }
+
+	// =====================================================================
+    // Crear canal 'world' fijo (permanente) para chat global LLM de NPCBots
+    // =====================================================================
+    {
+        TC_LOG_INFO("server.loading", "Creating permanent 'world' channel...");
+
+        // Crear el canal 'world' para Alianza y Horda.
+        // ChannelMgr::ForTeam(team) devuelve el manager correspondiente a
+        // cada faccion:  ALLIANCE = 469, HORDE = 67.
+        // Nota: si CONFIG_ALLOW_TWO_SIDE_INTERACTION_CHANNEL esta activo,
+        // ForTeam devuelve el mismo manager para ambas facciones, y el
+        // segundo CreateCustomChannel no hara nada (ya existe).
+        for (uint32 team : { uint32(ALLIANCE), uint32(HORDE) })
+        {
+            ChannelMgr* mgr = ChannelMgr::ForTeam(team);
+            if (!mgr)
+            {
+                TC_LOG_ERROR("server.loading",
+                             "No se pudo obtener ChannelMgr para el team {}.", team);
+                continue;
+            }
+
+            // GetCustomChannel devuelve el canal si ya existe
+            Channel* existing = mgr->GetCustomChannel("world");
+            if (existing)
+            {
+                TC_LOG_INFO("server.loading",
+                            "Canal 'world' ya existia para el team {}.", team);
+                continue;
+            }
+
+            // Crear el canal custom 'world'
+            Channel* worldChannel = mgr->CreateCustomChannel("world");
+            if (worldChannel)
+            {
+                // Configurar como canal anunciado y sin ownership (permanente)
+                worldChannel->SetAnnounce(true);
+                worldChannel->SetOwnership(false);
+                worldChannel->SetPassword("");
+
+                TC_LOG_INFO("server.loading",
+                            "Canal 'world' creado para el team {}.", team);
+            }
+            else
+            {
+                TC_LOG_ERROR("server.loading",
+                             "Fallo al crear el canal 'world' para el team {}.", team);
+            }
+        }
+
+        TC_LOG_INFO("server.loading", "Permanent 'world' channel created.");
+    }
+	
 }
 
 void World::DetectDBCLang()

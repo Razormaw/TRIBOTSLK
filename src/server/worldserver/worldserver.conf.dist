@@ -4968,30 +4968,55 @@ NpcBot.Premade.Enable = 0
 
 
 ###################################################################################################
-# NPCBOT LLM CHAT SETTINGS (Groq/OpenAI Compatible)
+# NPCBOT LLM CHAT
 #
+#    NpcBot.LLM.Enable
+#        Description: Habilita el chat LLM de los NPCBots.
+#        Default:     0 - (Deshabilitado)
+#                     1 - (Habilitado)
 
 NpcBot.LLM.Enable = 1
 
-# Endpoint de Groq (API compatible con OpenAI)
+#
+#    NpcBot.LLM.Endpoint
+#        Description: URL del endpoint del LLM (compatible con OpenAI API).
+#        Default:     "http://localhost:11434/api/generate"
+
 NpcBot.LLM.Endpoint = "https://api.groq.com/openai/v1/chat/completions"
 
-# Tu API Key de Groq (consigue una gratis en https://console.groq.com/keys)
+#
+#    NpcBot.LLM.ApiKey
+#        Description: API Key del proveedor LLM.
+#        Default:     ""
+
 NpcBot.LLM.ApiKey = "TU_API_KEY_AQUI"
 
-# Modelo a usar (Qwen 3.8 27B vía Groq)
-NpcBot.LLM.Model = "qwen/qwen3.8-27b"
+#
+#    NpcBot.LLM.Model
+#        Description: Modelo a usar.
+#        Default:     "qwen/qwen3.8-27b"
 
-# Tiempo máximo de espera (segundos)
-NpcBot.LLM.TimeoutSeconds = 30
+NpcBot.LLM.Model = "llama-3.1-8b-instant"
 
-# Generaciones simultáneas máximas
+#
+#    NpcBot.LLM.TimeoutSeconds
+#        Description: Timeout en segundos para la peticion al LLM.
+#        Default:     15
+
+NpcBot.LLM.TimeoutSeconds = 15
+
+#
+#    NpcBot.LLM.MaxGenerations
+#        Description: Numero maximo de generaciones concurrentes.
+#        Default:     3
+
 NpcBot.LLM.MaxGenerations = 3
 
-# Parámetros del modelo
-NpcBot.LLM.MaxTokens = 120
-NpcBot.LLM.Temperature = 0.7
-NpcBot.LLM.MaxContextLength = 2000
+#
+#    NpcBot.LLM.FallbackSystemMsg
+#        Description: Envia tambien un mensaje SYSTEM global como fallback.
+#        Default:     0
 
+NpcBot.LLM.FallbackSystemMsg = 0
 ###################################################################################################
 
