@@ -4968,55 +4968,57 @@ NpcBot.Premade.Enable = 0
 
 
 ###################################################################################################
-# NPCBOT LLM CHAT
+# NPCBOT LLM CHAT SETTINGS (Groq/OpenAI Compatible)
 #
-#    NpcBot.LLM.Enable
-#        Description: Habilita el chat LLM de los NPCBots.
-#        Default:     0 - (Deshabilitado)
-#                     1 - (Habilitado)
 
 NpcBot.LLM.Enable = 1
 
-#
-#    NpcBot.LLM.Endpoint
-#        Description: URL del endpoint del LLM (compatible con OpenAI API).
-#        Default:     "http://localhost:11434/api/generate"
-
+# Endpoint de Groq (API compatible con OpenAI)
 NpcBot.LLM.Endpoint = "https://api.groq.com/openai/v1/chat/completions"
 
-#
-#    NpcBot.LLM.ApiKey
-#        Description: API Key del proveedor LLM.
-#        Default:     ""
+# Tu API Key de Groq (consigue una gratis en https://console.groq.com/keys)
+NpcBot.LLM.ApiKey = "TU-API-KEY-AQUI"
 
-NpcBot.LLM.ApiKey = "TU_API_KEY_AQUI"
+# Modelo a usar (Qwen 3.8 27B vía Groq)
+NpcBot.LLM.Model = "qwen/qwen3.8-27b"
 
-#
-#    NpcBot.LLM.Model
-#        Description: Modelo a usar.
-#        Default:     "qwen/qwen3.8-27b"
+# Tiempo máximo de espera (segundos)
+NpcBot.LLM.TimeoutSeconds = 30
 
-NpcBot.LLM.Model = "llama-3.1-8b-instant"
-
-#
-#    NpcBot.LLM.TimeoutSeconds
-#        Description: Timeout en segundos para la peticion al LLM.
-#        Default:     15
-
-NpcBot.LLM.TimeoutSeconds = 15
-
-#
-#    NpcBot.LLM.MaxGenerations
-#        Description: Numero maximo de generaciones concurrentes.
-#        Default:     3
-
+# Generaciones simultáneas máximas
 NpcBot.LLM.MaxGenerations = 3
 
-#
-#    NpcBot.LLM.FallbackSystemMsg
-#        Description: Envia tambien un mensaje SYSTEM global como fallback.
-#        Default:     0
+# Parámetros del modelo
+NpcBot.LLM.MaxTokens = 120
+NpcBot.LLM.Temperature = 0.7
+NpcBot.LLM.MaxContextLength = 2000
 
-NpcBot.LLM.FallbackSystemMsg = 0
+# Puente visible mientras se ajusta el formato de canal (1 = activo)
+NpcBot.LLM.FallbackSystemMsg = 1
+
+# =====================================================
+# CONVERSACIONES BOT-A-BOT (director de taberna)
+# =====================================================
+NpcBot.LLM.BotToBot.Enable = 1
+NpcBot.LLM.BotToBot.Chance = 25
+NpcBot.LLM.BotToBot.CooldownSec = 150
+NpcBot.LLM.BotToBot.MinTurns = 2
+NpcBot.LLM.BotToBot.MaxTurns = 3
+NpcBot.LLM.BotToBot.MinDelaySec = 4
+NpcBot.LLM.BotToBot.MaxDelaySec = 8
+NpcBot.LLM.BotToBot.PhraseReloadMin = 5
+
+# Cadena de respuestas a jugadores (estilo Taberna)
+NpcBot.LLM.PlayerChain.Enable = 1
+NpcBot.LLM.PlayerChain.MinTurns = 2
+NpcBot.LLM.PlayerChain.MaxTurns = 3
+
+# Canales donde los bots ESCUCHAN (lista separada por comas, sin importar mayusculas)
+NpcBot.LLM.Channels = "world,mundo,general,taberna"
+
+# Canal donde ocurren las charlas bot-a-bot del director
+NpcBot.LLM.BotToBot.Channel = world
+
 ###################################################################################################
+
 
