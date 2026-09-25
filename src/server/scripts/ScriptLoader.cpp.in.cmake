@@ -23,6 +23,9 @@
 #include "Define.h"
 
 @TRINITY_SCRIPTS_FORWARD_DECL@
+
+void AddSC_npcbot_llm_chat();
+
 #ifdef TRINITY_IS_DYNAMIC_SCRIPTLOADER
 #  include "revision_data.h"
 #  define TC_SCRIPT_API TC_API_EXPORT
@@ -49,6 +52,9 @@ TC_SCRIPT_API char const* GetScriptModule()
 /// Exposed in script modules to register all scripts to the ScriptMgr.
 TC_SCRIPT_API void AddScripts()
 {
+
+AddSC_npcbot_llm_chat();
+
 @TRINITY_SCRIPTS_INVOKE@}
 
 /// Exposed in script modules to get the build directive of the module.

@@ -2273,18 +2273,7 @@ void World::SetInitialWorldSettings()
 
     TC_METRIC_EVENT("events", "World initialized", "World initialized in " + std::to_string(startupDuration / 60000) + " minutes " + std::to_string((startupDuration % 60000) / 1000) + " seconds");
 	
-    // =====================================================================
-    // Registrar scripts del LLM de NPCBots manualmente.
-    // Esto se hace porque el scriptloader autogenerado por CMake no
-    // siempre detecta scripts nuevos en subcarpetas. Registramos aquí
-    // de forma explicita para garantizar que OnChat() del PlayerScript
-    // se dispare cuando un jugador escribe en un canal.
-    // =====================================================================
-    {
-        extern void AddSC_npcbot_llm_chat();   // declaracion forward
-        AddSC_npcbot_llm_chat();
-        TC_LOG_INFO("server.loading", "LLM: AddSC_npcbot_llm_chat() invocado manualmente.");
-    }
+    
 
 	// =====================================================================
     // Crear canal 'world' fijo (permanente) para chat global LLM de NPCBots

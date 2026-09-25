@@ -48,52 +48,37 @@ static void SendBotChannelMessage(Creature* bot, const std::string& channelName,
     if (!bot || !bot->IsInWorld() || !bot->IsAlive())
         return;
 
-    // CAPA 1 (opcional): name query response para que el cliente cachee el nombre.
-    // El opcode SMSG_NAME_QUERY_RESPONSE exige: guid + unknown + nameLen + name +
-    // realmNameLen + race + gender + class.  Si el nameLen o realmNameLen faltan,
-    // el cliente descarta el packet silenciosamente y luego no muestra el nombre.
-    {
-        std::string const& botName = bot->GetName();
-        WorldPacket nameData(SMSG_NAME_QUERY_RESPONSE, botName.size() + 40);
-        nameData << bot->GetGUID();                  // ObjectGuid completo (lo exige este opcode)
-        nameData << uint8(0);                        // unknown
-        nameData << uint8(botName.size());           // nameLen
-        nameData << botName;                         // name (sin null)
-        nameData << uint8(0);                        // realmNameLen = 0 (mismo reino)
-        nameData << uint8(bot->GetByteValue(UNIT_FIELD_BYTES_0, 0));  // race
-        nameData << uint8(bot->GetByteValue(UNIT_FIELD_BYTES_0, 1));  // gender
-        nameData << uint8(bot->GetByteValue(UNIT_FIELD_BYTES_0, 2));  // class
-        sWorld->SendGlobalMessage(&nameData);
-    }
+    // Crear un GUID virtual de jugador basado en el entry del bot
+    // Esto engaña al cliente para que trate al bot como si fuera un jugador
+        ObjectGuid vGuid = ObjectGuid::Create<HighGuid::Player>(uint32(0x00F00000 + bot->GetEntry()));
 
-    // CAPA 2: mensaje de canal propiamente dicho.
-    // Estructura correcta para CHAT_MSG_CHANNEL en 3.3.5a:
-    //   uint8     type
-    //   uint32    language
-    //   PackedGuid senderGuid
-    //   uint32    channelNameLen  (incluye null)
-    //   char[]    channelName     (con null)
-    //   PackedGuid senderGuid2    (sí, se repite para CHANNEL)
-    //   uint32    msgLen          (incluye null)
-    //   char[]    msg             (con null)
-    //   uint8     chatTag
+    // CAPA 1: SMSG_NAME_QUERY_RESPONSE para que el cliente cachee el nombre del "jugador"
+    // Estructura 3.3.5a: PackedGuid + unknown + name + realmName + race + gender + class
+    std::string const& botName = bot->GetName();
+    WorldPacket nameData(SMSG_NAME_QUERY_RESPONSE, botName.size() + 40);
+    nameData.appendPackGUID(vGuid.GetRawValue());
+    nameData << uint8(0);                 // unknown = 0 (éxito)
+    nameData << botName;                  // nombre (ByteBuffer agrega null automáticamente)
+    nameData << std::string("");          // realmName vacío
+    nameData << uint8(bot->GetByteValue(UNIT_FIELD_BYTES_0, 0));  // race
+    nameData << uint8(bot->GetByteValue(UNIT_FIELD_BYTES_0, 1));  // gender
+    nameData << uint8(bot->GetByteValue(UNIT_FIELD_BYTES_0, 2));  // class
+    sWorld->SendGlobalMessage(&nameData);
+
+    // CAPA 2: mensaje de canal usando el GUID virtual
     WorldPacket data(SMSG_MESSAGECHAT, msg.size() + channelName.size() + 40);
     data << uint8(CHAT_MSG_CHANNEL);
-    data << uint32(LANG_UNIVERSAL);                  // forzado: los canales en 3.3.5a son universal
-    data << bot->GetGUID();                          // PackedGuid (ByteBuffer lo hace solo)
+    data << uint32(LANG_UNIVERSAL);
+    data << vGuid;                          // GUID virtual (el cliente busca el nombre cacheado)
     data << uint32(channelName.size() + 1);
     data << channelName.c_str();
-    data << bot->GetGUID();                          // PackedGuid repetido
+    data << vGuid;                          // repetido para CHANNEL
     data << uint32(msg.size() + 1);
     data << msg.c_str();
-    data << uint8(0);                                // chat tag
+    data << uint8(0);
     sWorld->SendGlobalMessage(&data);
 
-    // CAPA 3: puente de emergencia visible (CHAT_MSG_SYSTEM global).
-    // CHAT_MSG_SYSTEM tiene estructura DISTINTA:
-    //   uint8  type
-    //   uint32 msgLen (incluye null)
-    //   char[] msg    (con null)
+    // CAPA 3: puente de emergencia (opcional)
     if (sConfigMgr->GetBoolDefault("NpcBot.LLM.FallbackSystemMsg", false))
     {
         std::string fallbackText = "[" + channelName + "] " + bot->GetName() + ": " + msg;
@@ -115,22 +100,19 @@ static std::string BuildLLMRequestBody(const std::string& prompt)
 {
     std::string model = sConfigMgr->GetStringDefault("NpcBot.LLM.Model", "qwen/qwen3.8-27b");
     int maxTokens     = sConfigMgr->GetIntDefault("NpcBot.LLM.MaxTokens", 120);
-    float temperature = sConfigMgr->GetFloatDefault("NpcBot.LLM.Temperature", 0.7f);
 
-    std::string systemPrompt = "Eres un NPC bot en un servidor privado de World of Warcraft 3.3.5a. ";
-    systemPrompt += "Responde de forma breve, en personaje, y en el mismo idioma del jugador. ";
-    systemPrompt += "No uses comillas, markdown ni emojis.";
+    std::string systemPrompt = "Eres un NPC de un servidor privado de World of Warcraft 3.3.5. ";
+    systemPrompt += "Responde de forma breve, en personaje y en el idioma del jugador. ";
+    systemPrompt += "No uses comillas, ni markdown, ni emojis.";
 
-    std::string body = "{";
-    body += "\"model\": \"" + model + "\", ";
-    body += "\"messages\": [";
-    body += "{\"role\": \"system\", \"content\": \"" + NpcBotLLMInterface::SanitizeForJson(systemPrompt) + "\"}, ";
-    body += "{\"role\": \"user\", \"content\": \"" + NpcBotLLMInterface::SanitizeForJson(prompt) + "\"}";
-    body += "], ";
-    body += "\"max_tokens\": " + std::to_string(maxTokens) + ", ";
-    body += "\"temperature\": " + std::to_string(temperature);
-    body += "}";
-
+    std::string body;
+    body += "{";
+    body += "\"model\":\"" + NpcBotLLMInterface::SanitizeForJson(model) + "\",";
+    body += "\"max_tokens\":" + std::to_string(maxTokens) + ",";
+    body += "\"messages\":[";
+    body += "{\"role\":\"system\",\"content\":\"" + NpcBotLLMInterface::SanitizeForJson(systemPrompt) + "\"},";
+    body += "{\"role\":\"user\",\"content\":\"" + NpcBotLLMInterface::SanitizeForJson(prompt) + "\"}";
+    body += "]}";
     return body;
 }
 
@@ -189,70 +171,79 @@ class npcbot_llm_chat_player_script : public PlayerScript
 public:
     npcbot_llm_chat_player_script() : PlayerScript("npcbot_llm_chat_player_script") { }
 
-    void OnChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Channel* channel) override
+        void OnChat(Player* player, uint32 type, uint32 /*lang*/, std::string& msg, Channel* channel) override
     {
+        // 1. Verificar que sea un mensaje de canal válido
         if (type != CHAT_MSG_CHANNEL || !channel)
-			        BOT_LOG_INFO("npcbots", "LLM: OnChat disparado (type={}, channel={}).",
-                     type, channel ? channel->GetName() : "NULL");
+        {
             return;
+        }
 
         std::string channelName = channel->GetName();
 
-        // Comparación case-insensitive: world = World = WORLD = mundo = general
+        // 2. Comparación case-insensitive: world = World = WORLD = mundo = general
         std::string lower = channelName;
         for (size_t i = 0; i < lower.size(); ++i)
+        {
             lower[i] = (char)tolower((unsigned char)lower[i]);
+        }
 
         if (lower != "world" && lower != "mundo" && lower != "general")
-			        BOT_LOG_INFO("npcbots", "LLM: canal aceptado '{}', continuando con LLM.", channelName);
-            return;
+        {
+            return; // No es el canal que nos interesa, salir.
+        }
 
-        BOT_LOG_INFO("npcbots", "LLM: mensaje detectado de '{}' en canal '{}'.",
-                     player->GetName(), channelName);
+        BOT_LOG_INFO("npcbots", "LLM: mensaje detectado de '{}' en canal '{}'.", player->GetName(), channelName);
 
+        // 3. Verificar si el sistema está habilitado
         if (!sConfigMgr->GetBoolDefault("NpcBot.LLM.Enable", false))
         {
             BOT_LOG_INFO("npcbots", "LLM: desactivado por configuracion (NpcBot.LLM.Enable = 0).");
             return;
         }
 
-                // Recoger todos los NPCBots activos del mundo
-        std::vector<Creature*> availableBots;
+        // 4. Buscar un bot aleatorio para que responda
+                std::vector<Creature*> availableBots;
         NpcBotRegistry const& registry = BotDataMgr::GetExistingNPCBots();
         for (NpcBotRegistry::const_iterator itr = registry.begin(); itr != registry.end(); ++itr)
         {
             Creature* bot = const_cast<Creature*>(*itr);
-            if (!bot)
-                continue;
-            if (!bot->IsInWorld())
-                continue;
-            if (!bot->IsAlive())
-                continue;
-            if (!bot->IsNPCBot())        // ← guard extra: solo bots reales
+            if (!bot || !bot->IsInWorld() || !bot->IsAlive())
                 continue;
             availableBots.push_back(bot);
         }
 
-        BOT_LOG_INFO("npcbots", "LLM: bots disponibles para responder: {}",
-                     (uint32)availableBots.size());
+        BOT_LOG_INFO("npcbots", "LLM: bots disponibles para responder: {}", (uint32)availableBots.size());
 
         if (availableBots.empty())
+        {
+            BOT_LOG_INFO("npcbots", "LLM: no hay bots disponibles para responder.");
             return;
+        }
 
-        // Seleccionar bot aleatorio
+        if (availableBots.empty())
+        {
+            BOT_LOG_INFO("npcbots", "LLM: no hay bots disponibles para responder.");
+            return;
+        }
+
+        // 5. Seleccionar un bot aleatorio
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> distrib(0, (int)availableBots.size() - 1);
+        std::uniform_int_distribution<> distrib(0, availableBots.size() - 1);
         Creature* responderBot = availableBots[distrib(gen)];
+        
         ObjectGuid botGuid = responderBot->GetGUID();
         std::string botName = responderBot->GetName();
 
-        // Prompt para el LLM
+        BOT_LOG_INFO("npcbots", "LLM: bot seleccionado para responder: '{}'", botName);
+
+        // 6. Construir el prompt para el LLM
         std::string prompt = "You are an NPC bot named '" + botName + "' in a World of Warcraft 3.3.5a private server. ";
         prompt += "A player named '" + player->GetName() + "' said in the '" + channelName + "' channel: \"" + msg + "\". ";
-        prompt += "Reply briefly (max 150 characters), in character, and in the same language as the player. Do not use quotes or markdown.";
+        prompt += "Reply briefly (max 100 characters), in character, and in the same language as the player. Do not use quotes or markdown.";
 
-        // Datos para el hilo asíncrono
+        // 7. Preparar datos para el hilo asíncrono
         struct ThreadData {
             ObjectGuid guid;
             std::string name;
@@ -261,62 +252,61 @@ public:
         };
 
         ThreadData* tdata = new ThreadData();
-        tdata->guid    = botGuid;
-        tdata->name    = botName;
-        tdata->prompt  = prompt;
+        tdata->guid = botGuid;
+        tdata->name = botName;
+        tdata->prompt = prompt;
         tdata->channel = channelName;
 
-        std::thread([](ThreadData* d) {
+        // 8. Lanzar el hilo en segundo plano
+                std::thread([](ThreadData* d) {
             try
-{
-    std::vector<std::string> debugLines;
-    int timeout = sConfigMgr->GetIntDefault("NpcBot.LLM.TimeoutSeconds", 15);
-    int maxGen  = sConfigMgr->GetIntDefault("NpcBot.LLM.MaxGenerations", 3);
+            {
+                std::vector<std::string> debugLines;
+                int timeout = sConfigMgr->GetIntDefault("NpcBot.LLM.TimeoutSeconds", 15);
+                int maxGen  = sConfigMgr->GetIntDefault("NpcBot.LLM.MaxGenerations", 3);
 
-    std::string body = BuildLLMRequestBody(d->prompt);
-    std::string response = NpcBotLLMInterface::Generate(body, timeout, maxGen, debugLines);
+                std::string body = BuildLLMRequestBody(d->prompt);
+                BOT_LOG_INFO("npcbots", "LLM: body JSON enviado: {}", body);
 
-    if (response.empty() || response.find("error") == 0)
-    {
-        BOT_LOG_INFO("npcbots", "LLM: fallo de generacion para el bot '{}'.", d->name);
-        delete d;
-        return;
-    }
+                std::string response = NpcBotLLMInterface::Generate(body, timeout, maxGen, debugLines);
 
-    std::string finalReply = ExtractOpenAIResponse(response);
-    if (finalReply.empty())
-    {
-        BOT_LOG_INFO("npcbots", "LLM: JSON sin respuesta util: {}",
-                     response.substr(0, 200));
-        delete d;
-        return;
-    }
+                if (response.empty() || response.find("\"error\"") != std::string::npos)
+                {
+                    BOT_LOG_INFO("npcbots", "LLM: la API devolvio error o vacio: {}", response.substr(0, 300));
+                    delete d;
+                    return;
+                }
 
-    size_t first = finalReply.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) { delete d; return; }
-    size_t last = finalReply.find_last_not_of(" \t\n\r");
-    finalReply = finalReply.substr(first, last - first + 1);
+                std::string finalReply = ExtractOpenAIResponse(response);
+                if (finalReply.empty())
+                {
+                    BOT_LOG_INFO("npcbots", "LLM: JSON sin respuesta util: {}", response.substr(0, 300));
+                    delete d;
+                    return;
+                }
 
-    if (finalReply.empty()) { delete d; return; }
+                size_t first = finalReply.find_first_not_of(" \t\n\r");
+                if (first == std::string::npos) { delete d; return; }
+                size_t last = finalReply.find_last_not_of(" \t\n\r");
+                finalReply = finalReply.substr(first, last - first + 1);
+                if (finalReply.empty()) { delete d; return; }
 
-    {
-        std::lock_guard<std::mutex> lock(g_pendingBotChatsMutex);
-        PendingBotChat pending;
-        pending.botGuid     = d->guid;
-        pending.reply       = finalReply;
-        pending.channelName = d->channel;
-        BOT_LOG_INFO("npcbots", "LLM: respuesta lista de '{}': {}", d->name, finalReply);
-        g_pendingBotChats.push(pending);
-    }
-
-    delete d;
-}
-	catch (const std::exception& e)
-	{
-		BOT_LOG_ERROR("npcbots", "LLM: excepcion en hilo: {}", e.what());
-		delete d;
-	}
-           
+                {
+                    std::lock_guard<std::mutex> lock(g_pendingBotChatsMutex);
+                    PendingBotChat pending;
+                    pending.botGuid     = d->guid;
+                    pending.reply       = finalReply;
+                    pending.channelName = d->channel;
+                    BOT_LOG_INFO("npcbots", "LLM: respuesta lista de '{}': {}", d->name, finalReply);
+                    g_pendingBotChats.push(pending);
+                }
+                delete d;
+            }
+            catch (const std::exception& e)
+            {
+                BOT_LOG_ERROR("npcbots", "LLM: excepcion en hilo: {}", e.what());
+                delete d;
+            }
         }, tdata).detach();
     }
 };
@@ -364,11 +354,13 @@ public:
 // ---------------------------------------------------------------------------
 // Registro de scripts (llamado desde ScriptLoader.cpp generado por CMake)
 // ---------------------------------------------------------------------------
-void AddSC_npcbot_llm_chat()
+TC_GAME_API void AddSC_npcbot_llm_chat()
 {
     new npcbot_llm_chat_player_script();
     new npcbot_llm_chat_world_script();
 
     BOT_LOG_INFO("npcbots", "LLM: scripts de chat registrados correctamente.");
 }
+
+
 

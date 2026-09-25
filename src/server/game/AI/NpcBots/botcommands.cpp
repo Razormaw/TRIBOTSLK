@@ -4956,6 +4956,7 @@ public:
 void AddSC_script_bot_commands()
 {
     new script_bot_commands();
+    
 }
 
 #ifdef _MSC_VER
