@@ -285,7 +285,7 @@ La **velocidad de inferencia**. Acceso gratuito a modelos de IA con latencia inc
 > Por ser la razón por la que hago esto.
 > Ver sus caras cuando los bots les respondieron por primera vez.
 > fue el mejor momento de todo el proyecto.
->Por José Francisco que ojal'a alg'un día pueda jugar WoW. 💖
+>Por José Francisco que ojalá algún día pueda jugar WoW. 💖
 > Ustedes me recuerdan por qué los videojuegos son mágicos.
 > **Este servidor es para ustedes.** 🌟
 
