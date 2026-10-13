@@ -12,7 +12,8 @@ enum Spells
     SPELL_KNOCK_AWAY            = 18651, 
     SPELL_TRAMPLE               = 21864, 
     SPELL_EARTHQUAKE            = 21871, 
-    SPELL_AVALANCHE_VISUAL      = 25055  
+    SPELL_AVALANCHE_VISUAL      = 25055,
+	SPELL_BOSS_ENRAGE           = 21915 
 };
 
 enum LandslideTexts
@@ -51,14 +52,14 @@ struct boss_landslide : public BossAI
         me->SetImmuneToAll(false);
     }
 
-    void JustEngagedWith(Unit* who) override
+        void JustEngagedWith(Unit* who) override
     {
         BossAI::JustEngagedWith(who);
         Talk(SAY_AGGRO);
         
-        events.ScheduleEvent(EVENT_KNOCK_AWAY, Seconds(urand(6, 10)));
-        events.ScheduleEvent(EVENT_TRAMPLE,    Seconds(urand(10, 15)));
-        events.ScheduleEvent(EVENT_EARTHQUAKE, Seconds(urand(20, 25)));
+        events.ScheduleEvent(EVENT_KNOCK_AWAY, Seconds(9)));
+        events.ScheduleEvent(EVENT_TRAMPLE,    Seconds(13)));
+        events.ScheduleEvent(EVENT_EARTHQUAKE, Seconds(22)));
     }
 
     void JustDied(Unit* killer) override
@@ -84,7 +85,7 @@ struct boss_landslide : public BossAI
         {
             _phase = PHASE_AVALANCHE;
             Talk(SAY_ENRAGE);
-            DoCastSelf(SPELL_LANDSLIDE_ENRAGE);
+            DoCastSelf(SPELL_BOSS_ENRAGE);
             
             events.ScheduleEvent(EVENT_SPAWN_ROCKS, Seconds(1));
             events.RescheduleEvent(EVENT_EARTHQUAKE, Seconds(5));
@@ -100,17 +101,17 @@ struct boss_landslide : public BossAI
             {
                 case EVENT_KNOCK_AWAY:
                     DoCastVictim(SPELL_KNOCK_AWAY);
-                    events.ScheduleEvent(EVENT_KNOCK_AWAY, Seconds(urand(12, 18)));
+                    events.ScheduleEvent(EVENT_KNOCK_AWAY, Seconds(16)));
                     break;
                     
                 case EVENT_TRAMPLE:
                     DoCastSelf(SPELL_TRAMPLE);
-                    events.ScheduleEvent(EVENT_TRAMPLE, Seconds(urand(15, 22)));
+                    events.ScheduleEvent(EVENT_TRAMPLE, Seconds(18)));
                     break;
                     
                 case EVENT_EARTHQUAKE:
                     DoCastSelf(SPELL_EARTHQUAKE);
-                    events.ScheduleEvent(EVENT_EARTHQUAKE, Seconds(urand(30, 40)));
+                    events.ScheduleEvent(EVENT_EARTHQUAKE, Seconds(35)));
                     break;
                     
                 case EVENT_SPAWN_ROCKS:

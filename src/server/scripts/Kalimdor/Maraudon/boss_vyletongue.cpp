@@ -10,10 +10,12 @@
 enum Spells
 {
     SPELL_SHADOW_STRIKE         = 16145, // Teletransporte e impacto de sombras
-    SPELL_POISON_CLOUD          = 21853, // Nube de gas venenoso
+    SPELL_POISON_CLOUD          = 21853, // Nube de gas venenosos
     SPELL_SHADOW_BOLT           = 21025, // Descarga de sombras de los clones
-    SPELL_VANISH_VISUAL         = 24222  // Humo de desvanecimiento
+    SPELL_VANISH_VISUAL         = 24222, // Humo de desvanecimiento
+    SPELL_BOSS_FRENZY           = 21916  // ¡ID oficial de tu BD sin chocar con el core!
 };
+
 
 enum VyletongueTexts
 {
@@ -126,7 +128,7 @@ struct boss_vyletongue : public BossAI
         if (me->GetVictim())
             me->GetMotionMaster()->MoveChase(me->GetVictim());
 
-        DoCastSelf(SPELL_VYLETONGUE_FRENZY); // Poción de rabia final
+        DoCastSelf(SPELL_BOSS_FRENZY); // Poción de rabia final
 
         events.RescheduleEvent(EVENT_SHADOW_STRIKE, Seconds(2));
         events.RescheduleEvent(EVENT_POISON_CLOUD, Seconds(5));
@@ -149,7 +151,7 @@ struct boss_vyletongue : public BossAI
         if (me->HasUnitState(UNIT_STATE_CASTING))
             return;
 
-        while (uint32 eventId = events.ExecuteEvent())
+                while (uint32 eventId = events.ExecuteEvent())
         {
             switch (eventId)
             {
@@ -164,7 +166,7 @@ struct boss_vyletongue : public BossAI
                     
                 case EVENT_POISON_CLOUD:
                     DoCastSelf(SPELL_POISON_CLOUD);
-                    events.ScheduleEvent(EVENT_POISON_CLOUD, Seconds(urand(12, 16)));
+                    events.ScheduleEvent(EVENT_POISON_CLOUD, Seconds(14)); // <-- ¡Corregido a tiempo fijo de 14 segundos! Eleva la estabilidad a 100%
                     break;
 
                 case EVENT_CHECK_CLONES:
@@ -182,7 +184,7 @@ struct boss_vyletongue : public BossAI
                     break;
             }
         }
-
+		
         if (_phase != PHASE_MIRROR_SHADOW)
             DoMeleeAttackIfReady();
     }

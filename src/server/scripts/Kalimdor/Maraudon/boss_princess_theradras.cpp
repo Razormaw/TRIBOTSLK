@@ -13,8 +13,8 @@ enum Spells
     SPELL_BOULDER                = 21832, 
     SPELL_THRASH                 = 3391,  
     SPELL_REPULSIVE_GAZE         = 21869, 
-    SPELL_EARTHQUAKE             = 69246, 
-    SPELL_ENRAGE                 = 24312  
+    SPELL_EARTHQUAKE             = 21864, 
+    SPELL_ENRAGE                 = 21915  
 };
 
 enum CustomEvents

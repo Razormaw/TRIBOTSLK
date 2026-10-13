@@ -117,12 +117,12 @@ struct boss_razorlash : public BossAI
                     {
                         DoCast(target, SPELL_IMPALING_ROOTS);
                     }
-                    events.ScheduleEvent(EVENT_ROOT, Seconds(urand(20, 26)));
+                    events.ScheduleEvent(EVENT_ROOT, Seconds(18)));
                     break;
                     
                 case EVENT_POISON:
                     DoCastVictim(SPELL_NOXIOUS_POISON);
-                    events.ScheduleEvent(EVENT_POISON, Seconds(urand(12, 18)));
+                    events.ScheduleEvent(EVENT_POISON, Seconds(16)));
                     break;
 
                 case EVENT_SPAWN_SPORES:

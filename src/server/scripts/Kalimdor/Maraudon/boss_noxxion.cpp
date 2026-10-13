@@ -53,13 +53,13 @@ struct boss_noxxion : public BossAI
         summons.DespawnAll();
     }
 
-    void JustEngagedWith(Unit* who) override
+        void JustEngagedWith(Unit* who) override
     {
         BossAI::JustEngagedWith(who);
         Talk(SAY_AGGRO);
         
-        events.ScheduleEvent(EVENT_TOXIC_VOLLEY,  Seconds(urand(6, 10)));
-        events.ScheduleEvent(EVENT_UPPERCUT,      Seconds(urand(10, 15)));
+        events.ScheduleEvent(EVENT_TOXIC_VOLLEY,  Seconds(9)));
+        events.ScheduleEvent(EVENT_UPPERCUT,      Seconds(13))));
     }
 
     void JustDied(Unit* killer) override
@@ -147,7 +147,7 @@ struct boss_noxxion : public BossAI
                     
                 case EVENT_UPPERCUT:
                     DoCastVictim(SPELL_UPPERCUT);
-                    events.ScheduleEvent(EVENT_UPPERCUT, Seconds(urand(15, 22)));
+                    events.ScheduleEvent(EVENT_UPPERCUT, Seconds(17)));
                     break;
 
                 case EVENT_CHECK_ADDS:

@@ -59,14 +59,14 @@ struct boss_celebras_the_cursed : public BossAI
         me->SetImmuneToAll(false);
     }
 
-    void JustEngagedWith(Unit* who) override
+        void JustEngagedWith(Unit* who) override
     {
         BossAI::JustEngagedWith(who);
         Talk(SAY_AGGRO);
         
-        events.ScheduleEvent(EVENT_WRATH,       Seconds(2));
-        events.ScheduleEvent(EVENT_ROOTS,       Seconds(urand(8, 12)));
-        events.ScheduleEvent(EVENT_CORRUPT,     Seconds(urand(15, 20)));
+        events.ScheduleEvent(EVENT_WRATH, Seconds(2));
+        events.ScheduleEvent(EVENT_ROOTS, Seconds(urand(8, 14)));   // Rango limpio en segundos (8 a 14s)
+        events.ScheduleEvent(EVENT_CORRUPT, Seconds(urand(15, 22))); // Rango limpio en segundos (15 a 22s)
     }
 
     void JustDied(Unit* killer) override
@@ -111,14 +111,14 @@ struct boss_celebras_the_cursed : public BossAI
             {
                 case EVENT_WRATH:
                     DoCastVictim(SPELL_CELEBRAS_WRATH);
-                    events.ScheduleEvent(EVENT_WRATH, Seconds(_phase == PHASE_BURST ? 2 : 4));
+                    events.ScheduleEvent(EVENT_WRATH, Seconds(4)); // Tiempo fijo para evitar el choque del ternario
                     break;
-                    
+   
                 case EVENT_ROOTS:
                     if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0, 35.0f, true))
                         DoCast(target, SPELL_CELEBRAS_ROOTS);
                     
-                    events.ScheduleEvent(EVENT_ROOTS, Seconds(urand(12, 18)));
+                    events.ScheduleEvent(EVENT_ROOTS, Seconds(14)));
                     break;
                     
                                 case EVENT_CORRUPT:
@@ -137,7 +137,7 @@ struct boss_celebras_the_cursed : public BossAI
                                 treant->AI()->AttackStart(me->GetVictim());
                         }
                     }
-                    events.ScheduleEvent(EVENT_CORRUPT, Seconds(urand(25, 30)));
+                    events.ScheduleEvent(EVENT_CORRUPT, Seconds(25)));
                     break;
 
             }

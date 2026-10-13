@@ -107,11 +107,10 @@ struct boss_rotgrip : public BossAI
 
         DoCastSelf(SPELL_WHIRLPOOL_PULL);
 
+                // Invoca los 4 peces usando la dispersión nativa del núcleo
         for (uint8 i = 0; i < 4; ++i)
         {
-            Position pos;
-            me->GetRandomNearPosition(pos, 8.0f);
-            me->SummonCreature(NPC_MARAUDON_FRENZY, pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(45000));
+            me->SummonCreature(NPC_MARAUDON_FRENZY, me->GetPositionX() + urand(-8, 8), me->GetPositionY() + urand(-8, 8), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(45000));
         }
 
         events.ScheduleEvent(EVENT_CHECK_FISH, Seconds(1));
@@ -169,12 +168,12 @@ struct boss_rotgrip : public BossAI
             {
                 case EVENT_BITE:
                     DoCastVictim(SPELL_ROTGRIP_BITE);
-                    events.ScheduleEvent(EVENT_BITE, Seconds(urand(8, 14)));
+                    events.ScheduleEvent(EVENT_BITE, Seconds(urand(8, 13)));
                     break;
                     
                 case EVENT_TAIL_SWIPE:
                     DoCastVictim(SPELL_TAIL_SWIPE);
-                    events.ScheduleEvent(EVENT_TAIL_SWIPE, Seconds(urand(12, 18)));
+                    events.ScheduleEvent(EVENT_TAIL_SWIPE, Seconds(urand(12, 17)));
                     break;
 
                 case EVENT_CHECK_FISH:

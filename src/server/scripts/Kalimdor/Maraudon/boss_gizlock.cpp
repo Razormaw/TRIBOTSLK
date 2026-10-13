@@ -12,8 +12,8 @@ enum Spells
     SPELL_DRAGON_GUN             = 21876, 
     SPELL_GOBLIN_BOMB            = 11841, 
     SPELL_SHOOT                  = 15620, 
-    SPELL_HYPERSPEED             = 24312, 
-    SPELL_GOBLIN_SHIELD          = 15618  
+    SPELL_HYPERSPEED             = 21877, 
+    SPELL_GOBLIN_SHIELD          = 21875  
 };
 
 enum GizlockTexts
@@ -54,15 +54,15 @@ struct boss_gizlock : public BossAI
         me->SetImmuneToAll(false);
     }
 
-    void JustEngagedWith(Unit* who) override
+        void JustEngagedWith(Unit* who) override
     {
         BossAI::JustEngagedWith(who);
         Talk(SAY_AGGRO);
         
-        events.ScheduleEvent(EVENT_DRAGON_GUN,    Seconds(urand(6, 10)));
-        events.ScheduleEvent(EVENT_GOBLIN_BOMB,   Seconds(urand(10, 15)));
-        events.ScheduleEvent(EVENT_GOBLIN_SHIELD, Seconds(urand(20, 25)));
-        events.ScheduleEvent(EVENT_SHOOT,         Seconds(urand(3, 5)));
+        events.ScheduleEvent(EVENT_DRAGON_GUN,    Seconds(9)));
+        events.ScheduleEvent(EVENT_GOBLIN_BOMB,   Seconds(13)));
+        events.ScheduleEvent(EVENT_GOBLIN_SHIELD, Seconds(23)));
+        events.ScheduleEvent(EVENT_SHOOT,         Seconds(4)));
     }
 
     void JustDied(Unit* killer) override
@@ -114,13 +114,13 @@ struct boss_gizlock : public BossAI
                     else if (Unit* target = SelectTarget(SelectTargetMethod::Random, 0))
                         DoCast(target, SPELL_GOBLIN_BOMB);
 
-                    events.ScheduleEvent(EVENT_GOBLIN_BOMB, Seconds(urand(12, 18)));
+                    events.ScheduleEvent(EVENT_GOBLIN_BOMB, Seconds(15)));
                     break;
                     
                 case EVENT_GOBLIN_SHIELD:
                     Talk(SAY_HYPERSPEED);
                     DoCastSelf(SPELL_GOBLIN_SHIELD);
-                    events.ScheduleEvent(EVENT_GOBLIN_SHIELD, Seconds(urand(25, 35)));
+                    events.ScheduleEvent(EVENT_GOBLIN_SHIELD, Seconds(30)));
                     break;
                     
                 case EVENT_SHOOT:
@@ -129,7 +129,7 @@ struct boss_gizlock : public BossAI
                         if (!me->IsWithinMeleeRange(target))
                             DoCast(target, SPELL_SHOOT);
                     }
-                    events.ScheduleEvent(EVENT_SHOOT, Seconds(urand(5, 8)));
+                    events.ScheduleEvent(EVENT_SHOOT, SecondsSeconds(6)));
                     break;
             }
         }

@@ -11,7 +11,8 @@ enum Spells
 {
     SPELL_STONE_FIST            = 21864, 
     SPELL_EARTHQUAKE_MUD        = 21871, 
-    SPELL_SLIME_AURA            = 21909  
+    SPELL_SLIME_AURA            = 21909,
+	SPELL_BOSS_ENRAGE           = 21915
 };
 
 enum MeshlokTexts
@@ -55,14 +56,14 @@ struct boss_meshlok : public BossAI
         me->SetImmuneToAll(false);
     }
 
-    void JustEngagedWith(Unit* who) override
+        void JustEngagedWith(Unit* who) override
     {
         BossAI::JustEngagedWith(who);
         Talk(SAY_AGGRO);
         
-        events.ScheduleEvent(EVENT_STONE_FIST,   Seconds(urand(6, 10)));
-        events.ScheduleEvent(EVENT_EARTHQUAKE,   Seconds(urand(15, 22)));
-        events.ScheduleEvent(EVENT_SUMMON_ADDS,  Seconds(urand(20, 28)));
+        events.ScheduleEvent(EVENT_STONE_FIST,   Seconds(8)));
+        events.ScheduleEvent(EVENT_EARTHQUAKE,   Seconds(18)));
+        events.ScheduleEvent(EVENT_SUMMON_ADDS,  Seconds(24)));
     }
 
     void JustDied(Unit* killer) override
@@ -89,7 +90,7 @@ struct boss_meshlok : public BossAI
             _phase = PHASE_HARVEST;
             Talk(SAY_ENRAGE);
             
-            DoCastSelf(SPELL_MESHLOK_ENRAGE);
+            DoCastSelf(SPELL_BOSS_ENRAGE);
             DoCastSelf(SPELL_SLIME_AURA); 
             
             events.RescheduleEvent(EVENT_SUMMON_ADDS, Seconds(1));
@@ -106,13 +107,13 @@ struct boss_meshlok : public BossAI
             {
                 case EVENT_STONE_FIST:
                     DoCastVictim(SPELL_STONE_FIST);
-                    events.ScheduleEvent(EVENT_STONE_FIST, Seconds(urand(12, 16)));
+                    events.ScheduleEvent(EVENT_STONE_FIST, Seconds(14)));
                     break;
                     
                 case EVENT_EARTHQUAKE:
                     Talk(SAY_EARTHQUAKE);
                     DoCastSelf(SPELL_EARTHQUAKE_MUD);
-                    events.ScheduleEvent(EVENT_EARTHQUAKE, Seconds(urand(25, 32)));
+                    events.ScheduleEvent(EVENT_EARTHQUAKE, Seconds(27)));
                     break;
                     
                                 case EVENT_SUMMON_ADDS:
