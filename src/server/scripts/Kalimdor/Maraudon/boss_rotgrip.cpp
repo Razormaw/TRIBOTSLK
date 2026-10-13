@@ -1,17 +1,16 @@
 /*
  * Rotgrip - Maraudon
  * Entry: 12237
- * TrinityCore 3.3.5a - Versión Mejorada No-Piñata Corregida (Fix Spell & Emote)
+ * TrinityCore 3.3.5a - TRIBOTSLK Epic Heroic Edition (Fixed Phase Gate)
  */
 
 #include "ScriptPCH.h"
 #include "maraudon.h"
 
-// Eliminados SPELL_ROTGRIP_BITE y SPELL_ROTGRIP_ENRAGE porque ya existen en maraudon.h
 enum Spells
 {
-    SPELL_TAIL_SWIPE            = 21869, // Coletazo que golpea a los melés situados detrás de él y los repele
-    SPELL_WHIRLPOOL_PULL        = 21909  // Efecto visual y mecánico de remolino que atrae a los jugadores
+    SPELL_TAIL_SWIPE            = 21869, 
+    SPELL_WHIRLPOOL_PULL        = 21909  
 };
 
 enum RotgripTexts
@@ -39,10 +38,9 @@ enum RotgripPhases
     PHASE_FINAL_BURST   = 5
 };
 
-// NPC asistente original de los lagos de Maraudon
 enum CustomAdds
 {
-    NPC_MARAUDON_FRENZY = 12223 // Frenesí hambriento (Pez carnívoro de la mazmorra)
+    NPC_MARAUDON_FRENZY = 12223 
 };
 
 struct boss_rotgrip : public BossAI
@@ -96,22 +94,24 @@ struct boss_rotgrip : public BossAI
         summons.Despawn(summon);
     }
 
-        void EnterSubmergePhase(uint8 nextPhase)
+    void EnterSubmergePhase(uint8 nextPhase)
     {
         _phase = nextPhase;
         Talk(SAY_SUBMERGE);
         
         me->AttackStop();
+        me->InterruptNonMeleeSpells(false);
         me->SetImmuneToAll(true);
         me->SetReactState(REACT_PASSIVE);
-        me->SetVisible(false);
+        me->SetVisible(false); 
 
         DoCastSelf(SPELL_WHIRLPOOL_PULL);
 
-        // Invoca los 4 peces usando la dispersión nativa del núcleo
         for (uint8 i = 0; i < 4; ++i)
         {
-            me->SummonCreature(NPC_MARAUDON_FRENZY, me->GetPositionX() + urand(-8, 8), me->GetPositionY() + urand(-8, 8), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(45000));
+            Position pos;
+            me->GetRandomNearPosition(pos, 8.0f);
+            me->SummonCreature(NPC_MARAUDON_FRENZY, pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(45000));
         }
 
         events.ScheduleEvent(EVENT_CHECK_FISH, Seconds(1));
@@ -127,7 +127,6 @@ struct boss_rotgrip : public BossAI
         me->SetImmuneToAll(false);
         me->SetReactState(REACT_AGGRESSIVE);
         
-        // Al salir del agua, ataca inmediatamente al jugador/bot más débil o rango aleatorio
         if (Unit* target = SelectTarget(SelectTargetMethod::Random, 1, 40.0f, true))
             me->AI()->AttackStart(target);
         else if (me->GetVictim())
@@ -135,7 +134,7 @@ struct boss_rotgrip : public BossAI
 
         if (_phase == PHASE_FINAL_BURST)
         {
-            DoCastSelf(SPELL_ROTGRIP_ENRAGE); // Rabia letal en el último 25%
+            DoCastSelf(SPELL_ROTGRIP_ENRAGE); 
         }
 
         events.RescheduleEvent(EVENT_BITE, Seconds(2));
@@ -149,13 +148,13 @@ struct boss_rotgrip : public BossAI
 
         events.Update(diff);
 
-        // Control de Fases dinámicas por porcentaje de salud
-        if (_phase == PHASE_SURFACE_1 && HealthBelowPct(60))
+        // GATILLO SEGURO ANTES DEL CASTING: Control de las sumersiones dinámicas
+        if (_phase == PHASE_SURFACE_1 && me->GetHealthPct() <= 60.0f)
         {
             EnterSubmergePhase(PHASE_DEEP_HUNTER_1);
             return;
         }
-        else if (_phase == PHASE_SURFACE_2 && HealthBelowPct(25))
+        else if (_phase == PHASE_SURFACE_2 && me->GetHealthPct() <= 25.0f)
         {
             EnterSubmergePhase(PHASE_DEEP_HUNTER_2);
             return;
@@ -181,7 +180,6 @@ struct boss_rotgrip : public BossAI
                 case EVENT_CHECK_FISH:
                     if (_phase == PHASE_DEEP_HUNTER_1 || _phase == PHASE_DEEP_HUNTER_2)
                     {
-                        // Si todos los esbirros invocados mueren, obligas al cocodrilo a salir a la superficie
                         if (summons.empty())
                         {
                             if (_phase == PHASE_DEEP_HUNTER_1)
@@ -210,4 +208,5 @@ void AddSC_boss_rotgrip()
 {
     RegisterCreatureAI(boss_rotgrip);
 }
+
 

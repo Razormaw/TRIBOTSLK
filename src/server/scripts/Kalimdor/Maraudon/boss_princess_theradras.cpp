@@ -1,7 +1,7 @@
 /*
  * Princess Theradras - Maraudon (Jefe Final)
  * Entry: 12225
- * TrinityCore 3.3.5a - Versión Mejorada No-Piñata Corregida (Fix Summon Chrono)
+ * TrinityCore 3.3.5a - TRIBOTSLK Epic Heroic Edition (Fixed Phase Gate)
  */
 
 #include "ScriptPCH.h"
@@ -73,13 +73,13 @@ struct boss_princess_theradras : public BossAI
     {
         _phase = PHASE_TRANSITION;
         me->AttackStop();
+        me->InterruptNonMeleeSpells(false); // Interrumpe cualquier casteo para forzar el terremoto
         me->SetImmuneToAll(true);
         me->SetReactState(REACT_PASSIVE);
         
-        Talk(3); // SAY_EARTH_PHASE registrado en base de datos
+        Talk(3); 
         DoCastSelf(SPELL_EARTHQUAKE);
 
-        // Corregido envolviendo explícitamente el tiempo en Milliseconds(30000)
         me->SummonCreature(NPC_THERADRAS_MINION, me->GetPositionX() + 5.0f, me->GetPositionY() + 5.0f, me->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(30000));
         me->SummonCreature(NPC_THERADRAS_MINION, me->GetPositionX() - 5.0f, me->GetPositionY() - 5.0f, me->GetPositionZ(), 0.0f, TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(30000));
 
@@ -96,7 +96,8 @@ struct boss_princess_theradras : public BossAI
 
         events.Update(diff);
 
-        if (_phase == PHASE_NORMAL && HealthBelowPct(30))
+        // GATILLO SEGURO ANTES DEL CASTING: Activación al 30% obligatorio
+        if (_phase == PHASE_NORMAL && me->GetHealthPct() <= 30.0f)
         {
             StartEarthPhase();
             return;

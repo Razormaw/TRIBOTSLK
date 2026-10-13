@@ -1,18 +1,17 @@
 /*
  * Noxxion - Maraudon
  * Entry: 13280
- * TrinityCore 3.3.5a - Versión Mejorada No-Piñata Corregida (Fix Position & Emote)
+ * TrinityCore 3.3.5a - TRIBOTSLK Epic Heroic Edition (Fixed Phase Gate)
  */
 
 #include "ScriptPCH.h"
 #include "maraudon.h"
 
-// Eliminados SPELL_NOXXION_FRENZY y NPC_NOXXION_SPAWN porque ya existen en maraudon.h
 enum Spells
 {
-    SPELL_TOXIC_VOLLEY          = 21857, // Descarga tóxica en área que aplica veneno acumulable
-    SPELL_UPPERCUT              = 10966, // Golpe que empuja al tanque principal y reduce amenaza
-    SPELL_POISON_CLOUD          = 21853  // Nube de veneno pasiva que daña a los melés cercanos
+    SPELL_TOXIC_VOLLEY          = 21857, 
+    SPELL_UPPERCUT              = 10966, 
+    SPELL_POISON_CLOUD          = 21853  
 };
 
 enum NoxxionTexts
@@ -70,12 +69,6 @@ struct boss_noxxion : public BossAI
         BossAI::JustDied(killer);
     }
 
-    void KilledUnit(Unit* victim) override
-    {
-        if (victim->IsPlayer())
-            Talk(SAY_KILL);
-    }
-
     void JustSummoned(Creature* summon) override
     {
         summons.Summon(summon);
@@ -88,17 +81,17 @@ struct boss_noxxion : public BossAI
         summons.Despawn(summon);
     }
 
-        void EnterSplitPhase()
+    void EnterSplitPhase()
     {
         _phase = PHASE_SPLIT;
         Talk(SAY_SPLIT);
         
         me->AttackStop();
+        me->InterruptNonMeleeSpells(false);
         me->SetImmuneToAll(true);
         me->SetReactState(REACT_PASSIVE);
-        me->SetVisible(false);
+        me->SetVisible(false); 
 
-        // Invoca los 5 engendros calculando el radio directamente con modificadores nativos
         for (uint8 i = 0; i < 5; ++i)
         {
             me->SummonCreature(NPC_NOXXION_SPAWN, me->GetPositionX() + urand(-7, 7), me->GetPositionY() + urand(-7, 7), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(60000));
@@ -119,11 +112,9 @@ struct boss_noxxion : public BossAI
         if (me->GetVictim())
             me->GetMotionMaster()->MoveChase(me->GetVictim());
 
-        // Activación de la Mutación de Fase Final
         DoCastSelf(SPELL_NOXXION_FRENZY);
-        DoCastSelf(SPELL_POISON_CLOUD); // Comienza a dejar gas venenoso permanente a su alrededor
+        DoCastSelf(SPELL_POISON_CLOUD); 
 
-        // Tiempos más agresivos para rematar el combate
         events.RescheduleEvent(EVENT_TOXIC_VOLLEY, Seconds(2));
         events.RescheduleEvent(EVENT_UPPERCUT, Seconds(6));
     }
@@ -135,8 +126,8 @@ struct boss_noxxion : public BossAI
 
         events.Update(diff);
 
-        // Control del cambio a Fase de División al llegar al 50% de salud
-        if (_phase == PHASE_NORMAL && HealthBelowPct(50))
+        // GATILLO SEGURO: Salto forzado al 50% de salud
+        if (_phase == PHASE_NORMAL && me->GetHealthPct() <= 50.0f)
         {
             EnterSplitPhase();
             return;
@@ -162,14 +153,12 @@ struct boss_noxxion : public BossAI
                 case EVENT_CHECK_ADDS:
                     if (_phase == PHASE_SPLIT)
                     {
-                        // Si ya no quedan esbirros vivos en el registro, el jefe regresa
                         if (summons.empty())
                         {
                             ExitSplitPhase();
                         }
                         else
                         {
-                            // Sigue cambiando el chequeo a 1 segundo
                             events.ScheduleEvent(EVENT_CHECK_ADDS, Seconds(1));
                         }
                     }

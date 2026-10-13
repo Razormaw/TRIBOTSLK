@@ -1,19 +1,18 @@
 /*
  * Lord Vyletongue - Maraudon
  * Entry: 12225
- * TrinityCore 3.3.5a - Versión Mejorada No-Piñata Corregida (Fix Position, Spell & Emote)
+ * TrinityCore 3.3.5a - TRIBOTSLK Epic Heroic Edition (Fixed Phase Gate)
  */
 
 #include "ScriptPCH.h"
 #include "maraudon.h"
 
-// Eliminado SPELL_VYLETONGUE_FRENZY porque ya existe en maraudon.h
 enum Spells
 {
-    SPELL_SHADOW_STRIKE         = 16145, // Teletransporte detrás de un objetivo con daño de sombras pesado
-    SPELL_POISON_CLOUD          = 21853, // Nube de gas venenosa que deja caer en el suelo
-    SPELL_SHADOW_BOLT           = 21025, // Descarga de las Sombras (Usada por sus clones)
-    SPELL_VANISH_VISUAL         = 24222  // Efecto visual de humo al desaparecer
+    SPELL_SHADOW_STRIKE         = 16145, // Teletransporte e impacto de sombras
+    SPELL_POISON_CLOUD          = 21853, // Nube de gas venenoso
+    SPELL_SHADOW_BOLT           = 21025, // Descarga de sombras de los clones
+    SPELL_VANISH_VISUAL         = 24222  // Humo de desvanecimiento
 };
 
 enum VyletongueTexts
@@ -39,7 +38,6 @@ enum BossPhases
     PHASE_FINAL_EXECUTE = 3
 };
 
-// NPC clon oficial de las sombras para la mecánica dinámica
 enum CustomAdds
 {
     NPC_VYLETONGUE_SHADOW_CLONE = 13448 
@@ -96,21 +94,21 @@ struct boss_vyletongue : public BossAI
         summons.Despawn(summon);
     }
 
-        void EnterMirrorPhase()
+    void EnterMirrorPhase()
     {
         _phase = PHASE_MIRROR_SHADOW;
         Talk(SAY_CLONES);
-        DoCastSelf(SPELL_VANISH_VISUAL);
         
         me->AttackStop();
-        me->SetImmuneToAll(true);
+        me->SetImmuneToAll(true); // Bloqueo de daño para proteger la fase
         me->SetReactState(REACT_PASSIVE);
-        me->SetVisible(false);
+        me->SetVisible(false); 
+        DoCastSelf(SPELL_VANISH_VISUAL);
 
-        // Crea las 2 imágenes espejo de sombras en los flancos usando la dispersión del núcleo
+        // Invocación segura de clones usando el sistema de dispersión nativa de tu Core
         for (uint8 i = 0; i < 2; ++i)
         {
-            me->SummonCreature(NPC_VYLETONGUE_SHADOW_CLONE, me->GetPositionX() + urand(-8, 8), me->GetPositionY() + urand(-8, 8), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(45000));
+            me->SummonCreature(NPC_VYLETONGUE_SHADOW_CLONE, me->GetPositionX() + urand(-6, 6), me->GetPositionY() + urand(-6, 6), me->GetPositionZ(), me->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT, Milliseconds(45000));
         }
 
         events.ScheduleEvent(EVENT_CHECK_CLONES, Seconds(1));
@@ -122,13 +120,13 @@ struct boss_vyletongue : public BossAI
         Talk(SAY_FRENZY);
         
         me->SetVisible(true);
-        me->SetImmuneToAll(false);
+        me->SetImmuneToAll(false); // Removemos la inmunidad
         me->SetReactState(REACT_AGGRESSIVE);
         
         if (me->GetVictim())
             me->GetMotionMaster()->MoveChase(me->GetVictim());
 
-        DoCastSelf(SPELL_VYLETONGUE_FRENZY);
+        DoCastSelf(SPELL_VYLETONGUE_FRENZY); // Poción de rabia final
 
         events.RescheduleEvent(EVENT_SHADOW_STRIKE, Seconds(2));
         events.RescheduleEvent(EVENT_POISON_CLOUD, Seconds(5));
@@ -141,8 +139,8 @@ struct boss_vyletongue : public BossAI
 
         events.Update(diff);
 
-        // Transición automática al 50% de salud hacia las imágenes espejo
-        if (_phase == PHASE_NORMAL && HealthBelowPct(50))
+        // GATILLO DE FASE SEGURO: Si la vida cae del 50% en cualquier momento, salta a los clones
+        if (_phase == PHASE_NORMAL && me->GetHealthPct() <= 50.0f)
         {
             EnterMirrorPhase();
             return;
@@ -161,12 +159,12 @@ struct boss_vyletongue : public BossAI
                     else if (me->GetVictim())
                         DoCastVictim(SPELL_SHADOW_STRIKE);
 
-                    events.ScheduleEvent(EVENT_SHADOW_STRIKE, Seconds(_phase == PHASE_FINAL_EXECUTE ? 8 : 14));
+                    events.ScheduleEvent(EVENT_SHADOW_STRIKE, Seconds(_phase == PHASE_FINAL_EXECUTE ? 7 : 13));
                     break;
                     
                 case EVENT_POISON_CLOUD:
                     DoCastSelf(SPELL_POISON_CLOUD);
-                    events.ScheduleEvent(EVENT_POISON_CLOUD, Seconds(urand(12, 18)));
+                    events.ScheduleEvent(EVENT_POISON_CLOUD, Seconds(urand(12, 16)));
                     break;
 
                 case EVENT_CHECK_CLONES:
